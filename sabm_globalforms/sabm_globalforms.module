@@ -10,6 +10,25 @@ function sabm_globalforms_menu() {
         'page arguments' => array(1),        
         'page callback'  => '_set_unsuscribe_user_page',
     );
+    $items['login-facebook'] = array(
+        'title' => t('Login Facebook'),
+        'access callback'=> TRUE,
+        //'page arguments' => array(1),        
+        'page callback'  => '_login_facebook',
+    );
+    $items['callback-facebook'] = array(
+        'title' => t('Callback Facebook'),
+        'access callback'=> TRUE,
+        //'page arguments' => array(1),        
+        'page callback'  => '_facebook_callback',
+    );
+    $items['admin/settings/facebook'] = array(
+      'title' => 'Facebook credentials',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('facebook_admin'),
+      'access arguments' => array('administer settings'),
+      'type' => MENU_NORMAL_ITEM,
+    );
     return $items;
   }
 
@@ -100,6 +119,73 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
  * Implements hook_form().
  */
  function sabm_globalforms_form($form,&$form_submit) {
+  module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
+
+  if(isset($_GET['code'])){
+    $fb = new Facebook\Facebook([
+      'app_id' => variable_get('facebook_app_id'),
+      'app_secret' => variable_get('facebook_app_secret'),
+      'default_graph_version' => 'v2.2',
+    ]);
+
+    $error = 'Hubo un inconveniente con Facebook. Por favor intente nuevamente.';
+
+    $helper = $fb->getRedirectLoginHelper();
+    try {
+      $accessToken = $helper->getAccessToken();
+    } catch(Facebook\Exceptions\FacebookResponseException $e) {
+      echo $error;
+      // When Graph returns an error
+      //echo 'Graph returned an error: ' . $e->getMessage();
+      //exit;
+    } catch(Facebook\Exceptions\FacebookSDKException $e) {
+      echo $error;
+      // When validation fails or other local issues
+      //echo 'Facebook SDK returned an error: ' . $e->getMessage();
+      //exit;
+    }
+
+    if (isset($accessToken)) {
+      // Logged in!
+      $_SESSION['facebook_access_token'] = (string) $accessToken;
+      try {
+        // Returns a `Facebook\FacebookResponse` object
+        $response = $fb->get('/me?fields=id,first_name,last_name,birthday,gender,address,email', $accessToken);
+      } catch(Facebook\Exceptions\FacebookResponseException $e) {
+        echo $error;
+        //echo 'Graph returned an error: ' . $e->getMessage();
+        //exit;
+      } catch(Facebook\Exceptions\FacebookSDKException $e) {
+        echo $error;
+        //echo 'Facebook SDK returned an error: ' . $e->getMessage();
+        //exit;
+      }
+
+      $user = $response->getGraphUser();
+      $firstname = $user['first_name'];
+      $lastname = $user['last_name'];
+      $gender = $user['gender'];
+      // Now you can redirect to another page and use the
+      // access token from $_SESSION['facebook_access_token']
+    }
+    else{
+      $login_fb = _login_facebook();
+    }
+  }
+  else{
+    $login_fb = _login_facebook();
+  }
+
+  if(isset($gender) && $gender == 'male'){
+    $default_gender = 'Masculino';
+  }
+  else if(isset($gender) && $gender == 'female'){
+    $default_gender = 'Femenino';
+  }
+  else{
+    $default_gender = '';
+  }
+
    $form_params =  _get_look_globalforms(arg(1));
    _get_location_resources($form_params['country']);
    $form = array(); 
@@ -134,12 +220,14 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#title' => t('Your first name'),
     '#type' => 'textfield',
     '#required' => TRUE,
+    '#value'  =>  (isset($firstname)) ? $firstname : '',
     '#attributes' => array( 'tabindex'  => '1', ),
    );  
    $form['sabformpersonal']['lname'] = array(
     '#title' => t('Your last name'),
     '#type' => 'textfield',
     '#required' => TRUE,
+    '#value'  =>  (isset($lastname)) ? $lastname : '',
     '#attributes' => array( 'tabindex'  => '2', ),      
    );    
    $form['sabformpersonal']['bdate'] = array(
@@ -153,6 +241,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#title' => t('Genre'),
     '#type' => 'select',
     '#options' => array('Masculino' => 'Masculino','Femenino' => 'Femenino'),
+    '#default_value' => $default_gender,
     '#attributes' => array( 'tabindex'  => '4', ),      
    );
    $form['sabformpersonal']['next1']  = array (
@@ -283,6 +372,14 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#type' => 'submit', 
     '#value' => t('Submit'),
    );
+
+   if(isset($login_fb)){
+    $form['my_field'] = array(
+      '#type' => 'link',
+      '#title' => t('Login with Facebook'),
+      '#href' => $login_fb
+    );
+   }
    return $form;
  }
 
@@ -525,3 +622,36 @@ function _get_nodeform_answers($sabmform_checkboxes = NULL){
     }  
 
  }
+
+
+function _login_facebook(){
+  $fb = new Facebook\Facebook([
+    'app_id' => variable_get('facebook_app_id'),
+    'app_secret' => variable_get('facebook_app_secret'),
+    'default_graph_version' => 'v2.2',
+  ]);
+  $helper = $fb->getRedirectLoginHelper();
+  $permissions = ['email', 'user_likes'];
+  $current_url = url(current_path(), array('absolute' => TRUE));
+  $loginUrl = $helper->getLoginUrl($current_url, $permissions);
+  return $loginUrl;
+}
+
+function facebook_admin(){
+  $form = array();
+
+  $form['facebook_app_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facebook APP ID'),
+    '#default_value' => variable_get('facebook_app_id'),
+    '#required' => TRUE,
+  );
+  $form['facebook_app_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Facebook APP Secret'),
+    '#default_value' => variable_get('facebook_app_secret'),
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
