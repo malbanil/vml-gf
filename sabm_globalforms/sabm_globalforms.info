@@ -1,0 +1,9 @@
+name = Sabmiller Global Forms
+description = This module will provide a custom form to Sabmiller forms integration.
+package = Sabmiller
+core = 7.x
+version = 1.x
+
+scripts[] = js/sabm_globalforms.js
+
+stylesheets[all][] = css/sabm_globalforms.css

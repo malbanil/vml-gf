@@ -1,0 +1,527 @@
+<?php
+
+/**
+ * Implements hook_menu().
+*/
+function sabm_globalforms_menu() {
+    $items['unsuscribe/%'] = array(
+        'title' => t('Unsuscribe user'),
+        'access callback'=> TRUE,
+        'page arguments' => array(1),        
+        'page callback'  => '_set_unsuscribe_user_page',
+    );
+    return $items;
+  }
+
+/**
+ * Implements hook_theme().
+*/
+function sabm_globalforms_theme($existing, $type, $theme, $path) {
+  return array(
+    'page__saabforms' => array(
+      'template' => 'templates/page--saabforms',
+      'render element' => 'page',
+      'variables' => array(
+        'saabforms_background_img' => NULL,
+        'saabforms_logo' => NULL,
+        'saabforms_tyc' => NULL,
+        'saabforms_text_color' => NULL,
+      )
+    ),
+    'mail__saabforms' => array(
+      'template' => 'templates/mail--saabforms',
+      'variables' => array(
+          'saabforms_logo' => NULL,
+          'saabforms_background_color' => NULL,
+          'saabforms_url_unsuscribe' => NULL,
+      )         
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_presave().
+ */
+ function sabm_globalforms_node_presave($node) {
+  if(empty($node->nid))
+  {
+    switch ($node->type) {
+      case 'saabforms':
+        // Asign to API KEY
+        $node->field_api_user[$node->language][0]['value'] = time();
+        $node->field_api_token[$node->language][0]['value'] = md5(time());
+      break;
+    }
+  }
+ }
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+ function sabm_globalforms_theme_registry_alter(&$theme_registry) {
+    $module_path = drupal_get_path('module', 'sabm_globalforms');
+    $template_file_objects = drupal_find_theme_templates($theme_registry, '.tpl.php', $module_path);
+    foreach ($template_file_objects as $key => $template_file_object) {
+        if (!isset($theme_registry[$key]['theme path']) || !preg_match('#/themes/#', $theme_registry[$key]['theme path'])) {
+            $theme_registry[$key]['theme path'] = $module_path;
+            $theme_registry[$key] = array_merge($theme_registry[$key], $template_file_object);
+            $theme_registry[$key]['type'] = 'module';
+          }
+    }
+ }
+
+/**
+ * Implements hook_node_preprocess_page().
+ */
+ function sabm_globalforms_preprocess_page(&$vars, $hook) {
+  $is_edit = trim(arg(2));
+  if ($vars['node']->type == "saabforms" && $is_edit != 'edit') 
+  {
+     $nid = trim(arg(1));
+     $vars['theme_hook_suggestions'][] = "page__saabforms";
+     $look_form = _get_look_globalforms($nid);
+     $vars['saabforms_background_img'] = theme_image( array('path' => $look_form['background'],'alt' => 'background') );
+     $vars['saabforms_logo'] = theme_image( array('path' => $look_form['logo'],'alt' => 'logo') );
+     $vars['saabforms_tyc'] =  $look_form['tyc'];
+
+  }
+  if(trim(arg(0)) ==  'unsuscribe'){
+     $params = explode('-',trim(arg(1)));
+     $look_form = _get_look_globalforms($params[2]);
+     $vars['saabforms_background_img'] = theme_image( array('path' => $look_form['background'],'alt' => 'background') );
+     $vars['saabforms_logo'] = theme_image( array('path' => $look_form['logo'],'alt' => 'logo') );
+     $vars['saabforms_msg']  = drupal_render($vars["page"]["content"]);
+     $vars['saabforms_tyc']  = $look_form['tyc'];
+  }
+
+ }
+
+/**
+ * Implements hook_form().
+ */
+ function sabm_globalforms_form($form,&$form_submit) {
+   $form_params =  _get_look_globalforms(arg(1));
+   _get_location_resources($form_params['country']);
+   $form = array(); 
+   $form['tab'] = array (
+      '#type' => 'markup',
+      '#markup' => '<ul class="tabs" id="sabform_tabs">
+                    <li class="tab-link current uno" data-tab="edit-sabformpersonal">1. Datos Personales</li>
+                    <li class="tab-link dos" data-tab="edit-sabformlocation">2. Ubicacion</li>
+                    <li class="tab-link tres" data-tab="edit-sabformcontact">3. Contacto</li></ul>',
+   );
+   $form['sabformpersonal'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Personal Information'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#attributes' => array('class'  => array( 'current' ), ),
+   );
+   $form['sabformlocation'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Ubication'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+   );
+   $form['sabformcontact'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Contact'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+   );
+   
+   $form['sabformpersonal']['fname'] = array(
+    '#title' => t('Your first name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array( 'tabindex'  => '1', ),
+   );  
+   $form['sabformpersonal']['lname'] = array(
+    '#title' => t('Your last name'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array( 'tabindex'  => '2', ),      
+   );    
+   $form['sabformpersonal']['bdate'] = array(
+    '#type' => 'date', 
+    '#title' => t('Birth Date'),
+    '#default_value' => $edit[$field->bdate], 
+    '#required' => TRUE,
+    '#attributes' => array( 'tabindex'  => '3', ),    
+   );
+   $form['sabformpersonal']['genre'] = array(
+    '#title' => t('Genre'),
+    '#type' => 'select',
+    '#options' => array('Masculino' => 'Masculino','Femenino' => 'Femenino'),
+    '#attributes' => array( 'tabindex'  => '4', ),      
+   );
+   $form['sabformpersonal']['next1']  = array (
+    '#type' => 'markup',
+    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformlocation" data-tabn="dos">'.t('Next').'</a>',
+   );
+
+   $form['sabformlocation']['country'] = array(
+    '#title' => t('Country'),
+    '#type' => 'textfield',
+    '#value' => ucfirst($form_params['country']),   
+    '#disabled' => TRUE, 
+    '#required' => TRUE,
+    '#attributes' => array('tabindex'  => '6',),
+   );  
+   $form['sabformlocation']['tmpstate'] = array(
+    '#type' => 'select',
+    '#title' => t('State'), 
+    '#options' => _get_location_level($form_params['country']), 
+    '#default_value' => $selected,  
+    '#attributes' => array('tabindex'  => '7'), 
+   );
+   $form['sabformlocation']['state'] = array(
+      '#type' => 'hidden',
+      '#attributes' => array( 'id'  => 'sabmform-state', ),      
+   );    
+   $form['sabformlocation']['tmpcity'] = array(
+    '#type' => 'select',
+    '#title' => t('City'),
+    '#options' => _get_location_level($form_params['country'],1), 
+    '#default_value' => $selected,  
+    '#attributes' => array('tabindex'  => '8'),     
+   );
+   $form['sabformlocation']['city'] = array(
+    '#type' => 'hidden',    
+    '#attributes' => array( 'id'  => 'sabmform-city', ),      
+   );  
+   $form['sabformlocation']['next2']  = array (
+    '#type' => 'markup',
+    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformcontact" data-tabn="tres">'.t('Next').'</a>',
+   );
+ 
+   $form['sabformcontact']['email'] = array(
+    '#title' => t('Your email'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array('tabindex'  => '10'), 
+   );  
+   $form['sabformcontact']['cellphone'] = array(
+    '#title' => t('Cellphone number'),
+    '#type' => 'textfield',
+    '#attributes' => array('tabindex'  => '11'), 
+   ); 
+   if($form_params['require_socialinfo'] == '1'){   
+       $form['sabformcontact']['faceid'] = array(
+        '#title' => t('Facebook'),
+        '#type' => 'textfield',
+        '#attributes' => array('tabindex'  => '12','class'  => array('face')), 
+       );  
+       $form['sabformcontact']['twitter'] = array(
+        '#title' => t('Twitter'),
+        '#type' => 'textfield',
+        '#attributes' => array('tabindex'  => '13','class'  => array('twitter')), 
+       );  
+   }else{
+       $form['sabformcontact']['faceid'] = array(
+        '#type' => 'hidden',
+        '#value' => 'NULL',
+       );  
+       $form['sabformcontact']['twitter'] = array(
+        '#type' => 'hidden',
+        '#value' => 'NULL',
+       );  
+   }   
+   $form['sabformcontact']['optin'] = array(
+    '#title' => t('(Opt-in) Acepto recibir boletines.'),
+    '#type' => 'checkbox',
+   );  
+   if($form_params['channel'] == '1'){ 
+       $option_channel = _get_sabmform_channels();
+       $form['sabformcontact']['channel'] = array(
+        '#type' => 'select',
+        '#title' => t('Como te enteraste de nosotros?'),
+        '#options' => $option_channel,
+        '#attributes' => array('tabindex'  => '14'),     
+       );
+    }else{
+       $form['sabformcontact']['channel'] = array(
+          '#type' => 'hidden', 
+          '#value' => 'NULL',
+         );
+    } 
+    if( empty($form_params['question']) ){
+      $form['sabformcontact']['questions'] = array(
+        '#type' => 'hidden', 
+        '#value' => 'NULL',
+      );    
+    }else{
+      $option_answers = _get_sabmform_answers($form_params['answers']);     
+      $form['sabformcontact']['questions'] = array(
+        '#type' => 'hidden', 
+        '#value' => $form_params['question'],
+      );    
+      $form['sabformcontact']['answers'] = array(
+        '#title' => $form_params['question'].'<div id="sabm-answer-select">-- Seleciona las opciones --</div>',
+        '#type' => 'checkboxes',
+        '#options' => $option_answers,
+      );  
+    }  
+   
+   $form['sabformcontact']['tyc'] = array(
+    '#title' => t('I agree to GLOBAL FORMS <a>Terms and Conditions.</a>'),
+    '#type' => 'checkbox',
+   ); 
+   $form['brand'] = array(
+    '#type' => 'hidden', 
+    '#value' => $form_params['brand'],
+   );
+   $form['campaign'] = array(
+     '#type' => 'hidden', 
+     '#value' => $form_params['campaign'],
+   ); 
+   $form['formid'] = array(
+     '#type' => 'hidden', 
+     '#value' => $form_params['formid'],
+   );         
+   $form['submit'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Submit'),
+   );
+   return $form;
+ }
+
+/**
+ * Implements hook_form_validate().
+ */
+function sabm_globalforms_form_validate($form_id, &$form, &$form_state){
+    if ($form['values']['fname'] == '') {
+       form_set_error('fname', t('You must select a name for this field'));
+    }
+    if ($form['values']['lname'] == '') {
+       form_set_error('lname', t('You must select a last name for this field.'));
+    }
+    if (!valid_email_address($form['values']['email']) ) {
+       form_set_error('email', t('This field do not have a email value.'));
+    }
+    if ( empty($form['values']['tyc']) || $form['values']['tyc'] == 0 ) {
+       form_set_error('tyc', t('You must accept the terms and conditions.'));
+    }
+}
+
+/**
+ * Implements hook_form_sumbit().
+ */
+function sabm_globalforms_form_submit($form, &$form_state) {
+  $node = new StdClass();
+  $node->type     = 'register';
+  $node->title    = $form_state['values']['fname'];   
+  $node->created  = strtotime("now");  
+  $node->changed  = strtotime("now");  
+  $node->promote  = 0;
+  $node->status   = 1;
+  $node->uid      = 11;//user default
+  $node->language = LANGUAGE_NONE;
+  node_object_prepare($node);
+  $tmp_date = $form_state['values']['bdate']['year'].'-'.$form_state['values']['bdate']['month'].'-'.$form_state['values']['bdate']['day'];
+  $tmp_brand = reset(taxonomy_get_term_by_name(trim($form_state['values']['brand'])));
+  $tmp_answer = 'NULL';
+  if( !empty($form_state['values']['questions']) ) {
+    $tmp_answer = _get_nodeform_answers($form_state['values']['answers']);
+  }
+  $tmp_mail=trim($form_state['values']['email']); 
+  $node->field_last_name[$node->language][0]['value']    = trim($form_state['values']['lname']); 
+  $node->field_birth_day[$node->language][0]['value']    = $tmp_date.' 00:00:00';
+  $node->field_gender[$node->language][0]['value']       = $form_state['values']['genre']; 
+  $node->field_country[$node->language][0]['value']      = $form_state['values']['country']; 
+  $node->field_state[$node->language][0]['value']        = $form_state['values']['state']; 
+  $node->field_city[$node->language][0]['value']         = $form_state['values']['city']; 
+  $node->field_email[$node->language][0]['value']        = $tmp_mail;
+  $node->field_phone[$node->language][0]['value']        = trim($form_state['values']['cellphone']); 
+  $node->field_facebook_id[$node->language][0]['value']  = trim($form_state['values']['faceid']); 
+  $node->field_twitter[$node->language][0]['value']      = trim($form_state['values']['twitter']);
+  $node->field_opt_in[$node->language][0]['value']       = $form_state['values']['optin']; 
+  $node->field_channel[$node->language][0]['value']      = $form_state['values']['channel']; 
+  $node->field_question_one[$node->language][0]['value'] = $form_state['values']['questions']; 
+  $node->field_answer_one[$node->language][0]['value']   = $tmp_answer; 
+  $node->field_campaing[$node->language][0]['value']     = $form_state['values']['campaign']; 
+  $node->field_brand[$node->language][0]['tid']          = $tmp_brand->tid;
+  $node->field_formid[$node->language][0]['value']       = $form_state['values']['formid']; 
+  node_save($node);
+  $reponse_token = md5($tmp_mail).'-'.$node->nid.'-'.$form_state['values']['formid'];
+  _notify_sabmform_user($tmp_mail,$form_state['values']['formid'],$node->nid);
+  drupal_set_message(t('Your data has been processed.'), 'status');
+  drupal_goto(current_path(), array('query'=>array('response'=>'true','token'=>$reponse_token) ));
+}
+
+/**
+ * @function
+ * Notified a register user.
+ *
+ * Input variables:
+ * - $to: This variable has the user email.
+ * - $id_form: This variable has the ID Form from where will be send the email. 
+ */
+function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL ){
+  if($to != NULL && $id_form != NULL && $id_register != NULL){
+    global $base_url;
+    $email_params =  _get_look_globalforms($id_form);
+    $url_unsuscribe = $base_url.'/unsuscribe/'.md5($to).'-'.$id_register.'-'.$id_form;
+    $body = theme('mail__saabforms',array('saabforms_url_unsuscribe' => $url_unsuscribe, 
+                                          'saabforms_url_logo'=> $email_params['logo'],
+                                          'saabforms_url_bodymail'=>$email_params['bodymail']));
+    $site_email = variable_get('site_mail', '');
+    $message = drupal_mail('sabm_globalforms','register',$to, $user->language, array(), $site_email , FALSE);
+    $message['headers']['Content-Type'] = 'text/html; charset=UTF-8;format=flowed';          
+    $system = drupal_mail_system('sabm_globalforms', 'register');
+    $message['body'] = $body;
+    $message['subject'] = t('Welcome to Global WebForms');
+    $message['result'] = $system->mail($message);
+    if($message['result']){
+      drupal_set_message('The email has been send you.','status');
+    } else{
+      drupal_set_message('Error send the email.','error');
+    }
+  }
+}
+
+/**
+ * @function
+ * Get look and feel/load params of the page form
+ *
+ * Input variables:
+ * - $nid_form: This variable has the nid of the form.
+ */
+ function _get_look_globalforms($nid_form = NULL){
+  if($nid_form){
+    $tmpnode = cache_get('nodeform_'.$nid_form);
+    if($tmpnode){
+      $node = $tmpnode->data;
+    }else{
+      $node = serialize(node_load($nid_form));
+      cache_set('nodeform_'.$nid_form,$node ,'cache',60*60*12);
+    }
+    if($node){
+      $node = unserialize($node);
+      $response_object = array();
+      $response_object['formid']  = $node->nid;      
+      $response_object['brand']   = $node->field_brandform[$node->language][0]["taxonomy_term"]->name;
+      $response_object['campaign']= $node->field_campaignform[$node->language][0]["taxonomy_term"]->name;  
+      $response_object['channel'] = $node->field_channelform[$node->language][0]["value"]; 
+      $response_object['question']= trim($node->field_open_question[$node->language][0]["value"]); 
+      $response_object['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
+      $response_object['require_socialinfo'] = $node->field_require_social_info[$node->language][0]["value"]; 
+      $response_object['country']   = $node->field_countryform[$node->language][0]['value'];
+      $response_object['background']= file_create_url($node->field_background[$node->language][0]['uri']);
+      $response_object['logo']      = file_create_url($node->field_logo[$node->language][0]['uri']);
+      $response_object['tyc']       = $node->body[$node->language][0]['value'];
+      $response_object['bodymail']  = $node->field_body_email[$node->language][0]['value'];
+      return $response_object;
+    }
+  }
+ }
+
+/**
+ * @function
+ * Get location resources and put in drupal cache
+ *
+ * Input variables:
+ * - $country: This variable has the country name 
+ */
+function _get_location_resources($country = NULL ){
+  $location_url = array ( 'colombia' => 'http://200.74.146.101/gf/?q=colombia-location-json', 
+                          'peru' =>     'http://200.74.146.101/gf/?q=peru-location-json', 
+                          'chile' =>    'http://200.74.146.101/gf/?q=chile-location-json', );
+  $tmp_locationresource = cache_get('sabmlocation_'.$country);
+  if(!$tmp_locationresource){
+      $request = drupal_http_request($location_url[$country]);
+      $json_response = drupal_json_decode($request->data);
+      cache_set('sabmlocation_'.$country, $json_response ,'cache');
+    }
+ } 
+
+/**
+ * @function
+ * Get locations items
+ *
+ * Input variables:
+ * - $country: This variable has the current country.
+ * - $level: This variable has the level items (First o second). 
+ */
+function _get_location_level($country = NULL , $level = 0 ){
+  $data_location = cache_get('sabmlocation_'.$country);
+  $json_response = ($data_location->data);
+  $list_options = array(); 
+  $list_options['']  = '-- Seleccione una opcion --';
+  foreach ($json_response['nodes'] as $item)
+    if($item['node']['level'] == $level) {
+        $list_options[$item['node']['term_id'].'/'.$item['node']['id_state']] = ucfirst($item['node']['name']); 
+     }
+  return $list_options;
+}
+
+/**
+ * @function
+ * Get answer options items
+ *
+ * Input variables:
+ * - $options_text: This variable has the string with the answer options.
+ */
+function _get_sabmform_answers($options_text = NULL){
+  if($options_text){
+    $list = array();
+    $options = split(',',$options_text);
+    foreach ($options as $value) {
+        $list[trim($value)] = trim($value);
+    }
+    return $list;
+  }
+} 
+
+/**
+ * @function
+ * Get the channel options of the Drupal vocabulary.
+ */
+function _get_sabmform_channels(){
+  $options = array();
+  $vid = taxonomy_vocabulary_machine_name_load("channels")->vid;
+  $terms = taxonomy_get_tree($vid);
+  $options['']  = '-- Seleccione una opcion --';
+  foreach ($terms as $value) {
+    $options[$value->name] = $value->name;
+  }
+  return $options;
+}
+
+/**
+ * @function
+ * Get answer options to submit form.
+ *
+ * Input variables:
+ * - $sabmform_text: This variable has checkboxes values from the form response.
+ */
+function _get_nodeform_answers($sabmform_checkboxes = NULL){
+  $txt_answers = '';
+  foreach ($sabmform_checkboxes as $key => $value) {
+    if($value != '0' ) $txt_answers.= $value.',';
+  }
+  return $txt_answers;
+}
+
+/**
+ * @function
+ * Set a User unsuscribe
+ *
+ * Input variables:
+ * - $token: This variable has user information.
+ */
+ function _set_unsuscribe_user_page($token = NULL){
+    $params = explode('-',trim(arg(1)));
+    $register = node_load($params[1]);
+    $mail  = $register->field_email[$register->language][0]['value'];
+    $form  = $register->field_formid[$register->language][0]['value'];
+    $optin = $register->field_opt_in[$register->language][0]['value'];
+    if($params[0] == md5($mail) && $params[2] == $form && $optin == '1' ){
+      $register->field_opt_in[$register->language][0]['value'] = '0'; 
+      node_save($register);
+      return 'El usuario con el email <strong>'.$mail.'</strong> se ha desuscrito satifactoriamente.';
+    }else{
+      return 'La informacion de desuscripción no coincide o el usuario ya no se encuentra insrito.';
+    }  
+
+ }

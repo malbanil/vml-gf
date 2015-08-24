@@ -1,0 +1,19 @@
+@charset "UTF-8";
+/* Tabs */
+#sabform_tabs{ margin: 0px; padding: 0px; list-style: none; }
+#sabform_tabs li{ background: none; color: #222; display: inline-block; padding: 10px 15px; cursor: pointer; }
+#sabform_tabs li.current{ background: #ededed; color: #222; }
+#sabm-globalforms-form .form-wrapper{ display: none; background: #ededed; padding: 15px;}
+#sabm-globalforms-form .form-wrapper.current{ display: inherit;}
+/* Form */
+#sab_forms_container{ position: relative; width: 100%; height: 100%; text-align: center;}
+.sab-forms-bg{ position: absolute; z-index: 0; width: 100%; height: 100%;	}
+.sab-forms-bg img{ width: 100%; height: 100%;}
+.sab-content{ width: 60%; display: inline-block; margin: auto; margin-top: 20px; margin-bottom: 20px; text-align: center; position: relative; background-color: white;}
+.sab-forms-form{ text-align: left; }
+.sab-forms-logo{ text-align: center; z-index: 1; display: inli display: inline-block; 	}
+.sab-forms-tyc{}
+.sab-forms-footer{}
+#sabm-answer-select{}
+#edit-tmpcity option{ display: none;}
+#edit-answers{ display: none;}
