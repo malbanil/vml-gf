@@ -16,6 +16,9 @@
   <div class="sab-forms-bg"><?php print $saabforms_background_img; ?></div>
   <div class="sab-content">
      <div class="sab-forms-logo"><?php print $saabforms_logo; ?></div>
+     <?php if(isset($saabforms_login_facebook)): ?>
+     <div class="sab-login-facebook"><a href="<?php print $saabforms_login_facebook ?>">Registro a través de Facebook</a><img src="<?php print $saabforms_icon_facebook ?>"/></div>
+     <?php endif; ?>
      <div class="sab-forms-form"><?php print $messages; ?>
             <?php if(isset($_GET['response']) && $_GET['response']=='true'){ ?>
             <center>

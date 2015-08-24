@@ -94,6 +94,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
  */
  function sabm_globalforms_preprocess_page(&$vars, $hook) {
   $is_edit = trim(arg(2));
+  module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
   if ($vars['node']->type == "saabforms" && $is_edit != 'edit') 
   {
      $nid = trim(arg(1));
@@ -102,6 +103,28 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
      $vars['saabforms_background_img'] = theme_image( array('path' => $look_form['background'],'alt' => 'background') );
      $vars['saabforms_logo'] = theme_image( array('path' => $look_form['logo'],'alt' => 'logo') );
      $vars['saabforms_tyc'] =  $look_form['tyc'];
+
+     if(!isset($_GET['code'])){
+      unset($_SESSION['facebook_access_token']); 
+      $vars['saabforms_login_facebook'] = _login_facebook();
+      $vars['saabforms_icon_facebook'] = file_create_url(drupal_get_path('module', 'sabm_globalforms').'/images/fblogo.png');
+     }
+     else{
+      $code = $_GET["code"];
+      if (isset($code)) {
+        $token_url="https://graph.facebook.com/oauth/access_token?client_id="
+          . variable_get('facebook_app_id') 
+          . "&client_secret=" . variable_get('facebook_app_secret') 
+          . "&code=" . $code
+          . "&grant_type=client_credentials";
+        $response = file_get_contents($token_url);
+        if(!$response){
+          $vars['saabforms_login_facebook'] = _login_facebook();
+          $vars['saabforms_icon_facebook'] = file_create_url(drupal_get_path('module', 'sabm_globalforms').'/images/fblogo.png');
+        }
+      }
+
+     }
 
   }
   if(trim(arg(0)) ==  'unsuscribe'){
@@ -134,12 +157,12 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     try {
       $accessToken = $helper->getAccessToken();
     } catch(Facebook\Exceptions\FacebookResponseException $e) {
-      echo $error;
+      drupal_set_message(t($error), 'error');
       // When Graph returns an error
       //echo 'Graph returned an error: ' . $e->getMessage();
       //exit;
     } catch(Facebook\Exceptions\FacebookSDKException $e) {
-      echo $error;
+      drupal_set_message(t($error), 'error');
       // When validation fails or other local issues
       //echo 'Facebook SDK returned an error: ' . $e->getMessage();
       //exit;
@@ -152,11 +175,11 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
         // Returns a `Facebook\FacebookResponse` object
         $response = $fb->get('/me?fields=id,first_name,last_name,birthday,gender,address,email', $accessToken);
       } catch(Facebook\Exceptions\FacebookResponseException $e) {
-        echo $error;
+        drupal_set_message(t($error), 'error');
         //echo 'Graph returned an error: ' . $e->getMessage();
         //exit;
       } catch(Facebook\Exceptions\FacebookSDKException $e) {
-        echo $error;
+        drupal_set_message(t($error), 'error');
         //echo 'Facebook SDK returned an error: ' . $e->getMessage();
         //exit;
       }
@@ -168,12 +191,6 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
       // Now you can redirect to another page and use the
       // access token from $_SESSION['facebook_access_token']
     }
-    else{
-      $login_fb = _login_facebook();
-    }
-  }
-  else{
-    $login_fb = _login_facebook();
   }
 
   if(isset($gender) && $gender == 'male'){
@@ -373,13 +390,6 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#value' => t('Submit'),
    );
 
-   if(isset($login_fb)){
-    $form['my_field'] = array(
-      '#type' => 'link',
-      '#title' => t('Login with Facebook'),
-      '#href' => $login_fb
-    );
-   }
    return $form;
  }
 
@@ -631,7 +641,7 @@ function _login_facebook(){
     'default_graph_version' => 'v2.2',
   ]);
   $helper = $fb->getRedirectLoginHelper();
-  $permissions = ['email', 'user_likes'];
+  $permissions = ['email', 'public_profile'];
   $current_url = url(current_path(), array('absolute' => TRUE));
   $loginUrl = $helper->getLoginUrl($current_url, $permissions);
   return $loginUrl;
