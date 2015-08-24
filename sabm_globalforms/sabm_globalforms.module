@@ -643,7 +643,7 @@ function _login_facebook(){
                     );
   $fb = new Facebook\Facebook($arrayFB);
   $helper = $fb->getRedirectLoginHelper();
-  $permissions = ['email', 'public_profile'];
+  $permissions = array('email', 'public_profile');
   $current_url = url(current_path(), array('absolute' => TRUE));
   $loginUrl = $helper->getLoginUrl($current_url, $permissions);
   return $loginUrl;
