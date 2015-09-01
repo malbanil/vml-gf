@@ -143,7 +143,6 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
  */
  function sabm_globalforms_form($form,&$form_submit) {
   module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
-
   if(isset($_GET['code'])){
     $arrayFB = array(
                       'app_id' => variable_get('facebook_app_id'),
