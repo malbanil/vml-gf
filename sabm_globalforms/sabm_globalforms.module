@@ -241,14 +241,14 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#title' => t('Your first name'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#value'  =>  (isset($firstname)) ? $firstname : '',
+    '#default_value'  =>  (isset($firstname)) ? $firstname : '',
     '#attributes' => array( 'tabindex'  => '1', ),
    );  
    $form['sabformpersonal']['lname'] = array(
     '#title' => t('Your last name'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#value'  =>  (isset($lastname)) ? $lastname : '',
+    '#default_value'  =>  (isset($lastname)) ? $lastname : '',
     '#attributes' => array( 'tabindex'  => '2', ),      
    );    
    $form['sabformpersonal']['bdate'] = array(
