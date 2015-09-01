@@ -33,6 +33,44 @@ function sabm_globalforms_menu() {
   }
 
 /**
+ * Implements hook_permission().
+ */
+function sabm_globalforms_permission() {
+  return array(
+    'Administer country and brand' => array(
+      'title' => t('Access to edit country and brand on edit user'),
+    )
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function sabm_globalforms_form_alter(&$form, &$form_state, $form_id){ 
+  if($form_id == 'user_profile_form'){    
+      if(user_access('Administer country and brand' )){ }
+      else{
+        $form['field_countryform']['#disabled'] = TRUE;
+        $form['field_brandform']['#disabled'] = TRUE;
+      }   
+  }
+  else if($form_id=="saabforms_node_form"){
+    global $user;   
+    $user_fields = user_load($user->uid);   
+    $form['field_countryform']['und']['#value'] = $user_fields->field_countryform['und'][0]['value'];
+    $form['field_countryform']['und']['#disabled'] = TRUE;
+    $options_term=FALSE;
+    foreach ($user_fields->field_brandform['und'] as $key => $value) {
+      $term=taxonomy_term_load($value['tid']);
+      $options_term[$value['tid']]=$term->name;
+    } 
+    $form['field_brandform']['und']['#options']=$options_term;
+    $form['field_brandform']['und']['#multiple']=FALSE;
+  } 
+}
+
+
+/**
  * Implements hook_theme().
 */
 function sabm_globalforms_theme($existing, $type, $theme, $path) {
