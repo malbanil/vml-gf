@@ -94,6 +94,9 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
  */
  function sabm_globalforms_preprocess_page(&$vars, $hook) {
   $is_edit = trim(arg(2));
+  if(session_status() !== PHP_SESSION_ACTIVE){
+    session_start();
+  }
   module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
   if ($vars['node']->type == "saabforms" && $is_edit != 'edit') 
   {
@@ -142,7 +145,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
  * Implements hook_form().
  */
  function sabm_globalforms_form($form,&$form_submit) {
-  module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
+  //module_load_include('php', 'sabm_globalforms', 'libraries/Facebook/autoload');
 
   if(isset($_GET['code'])){
     $arrayFB = array(
