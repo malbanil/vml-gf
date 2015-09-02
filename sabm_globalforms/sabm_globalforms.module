@@ -199,12 +199,12 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     try {
       $accessToken = $helper->getAccessToken();
     } catch(Facebook\Exceptions\FacebookResponseException $e) {
-      drupal_set_message(t($error), 'error');
+      echo $error;
       // When Graph returns an error
       //echo 'Graph returned an error: ' . $e->getMessage();
       //exit;
     } catch(Facebook\Exceptions\FacebookSDKException $e) {
-      drupal_set_message(t($error), 'error');
+      echo $error;
       // When validation fails or other local issues
       //echo 'Facebook SDK returned an error: ' . $e->getMessage();
       //exit;
@@ -217,22 +217,29 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
         // Returns a `Facebook\FacebookResponse` object
         $response = $fb->get('/me?fields=id,first_name,last_name,birthday,gender,address,email', $accessToken);
       } catch(Facebook\Exceptions\FacebookResponseException $e) {
-        drupal_set_message(t($error), 'error');
+        echo $error;
         //echo 'Graph returned an error: ' . $e->getMessage();
         //exit;
       } catch(Facebook\Exceptions\FacebookSDKException $e) {
-        drupal_set_message(t($error), 'error');
+        echo $error;
         //echo 'Facebook SDK returned an error: ' . $e->getMessage();
         //exit;
       }
 
       $user = $response->getGraphUser();
-      $firstname = $user['first_name'];
-      $lastname = $user['last_name'];
-      $gender = $user['gender'];
+      $id = isset($user['id']) ? $user['id'] : '';
+      $firstname = isset($user['first_name']) ? $user['first_name'] : '';
+      $lastname = isset($user['last_name']) ? $user['last_name'] : '';
+      $gender = isset($user['gender']) ? $user['gender'] : '';
+      $email = isset($user['email']) ? $user['email'] : '';
+      $birthday = isset($user['birthday']) ? $user['birthday'] : '';
+      if($birthday != ''){
+        $birthday = explode('/', $birthday);
+      }
       // Now you can redirect to another page and use the
       // access token from $_SESSION['facebook_access_token']
     }
+
   }
 
   if(isset($gender) && $gender == 'male'){
@@ -289,10 +296,11 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
     '#default_value'  =>  (isset($lastname)) ? $lastname : '',
     '#attributes' => array( 'tabindex'  => '2', ),      
    );    
+
    $form['sabformpersonal']['bdate'] = array(
     '#type' => 'date', 
     '#title' => $form_params['labels']['field_label_birth_day'],
-    '#default_value' => $edit[$field->bdate], 
+    '#default_value' => ($birthday != '') ? array('month'=>(int)$birthday[0], 'year'=>$birthday[2], 'day'=>(int)$birthday[1]) : $edit[$field->bdate],
     '#required' => TRUE,
     '#attributes' => array( 'tabindex'  => '3', ),    
    );
@@ -346,6 +354,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
    $form['sabformcontact']['email'] = array(
     '#title' => $form_params['labels']['field_label_email'],
     '#type' => 'textfield',
+    '#default_value'  =>  (isset($email)) ? $email : '',
     '#required' => TRUE,
     '#attributes' => array('tabindex'  => '10'), 
    );  
@@ -358,6 +367,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
        $form['sabformcontact']['faceid'] = array(
         '#title' => t('Facebook'),
         '#type' => 'textfield',
+        '#default_value'  =>  (isset($id)) ? $id : '',
         '#attributes' => array('tabindex'  => '12','class'  => array('face')), 
        );  
        $form['sabformcontact']['twitter'] = array(
@@ -369,6 +379,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
        $form['sabformcontact']['faceid'] = array(
         '#type' => 'hidden',
         '#value' => 'NULL',
+        '#default_value'  =>  (isset($id)) ? $id : ''
        );  
        $form['sabformcontact']['twitter'] = array(
         '#type' => 'hidden',
