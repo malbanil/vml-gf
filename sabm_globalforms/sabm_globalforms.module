@@ -393,7 +393,27 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
           '#value' => 'NULL',
          );
     } 
-    if( empty($form_params['question']) ){
+    if( empty($form_params['open_question']) ){//open question one
+      $form['sabformcontact']['open_questions'] = array(
+        '#type' => 'hidden', 
+        '#value' => 'NULL',
+      );    
+      $form['sabformcontact']['open_questions_label'] = array(
+        '#type' => 'hidden', 
+        '#value' => 'NULL',
+      );        
+    }else{
+      $form['sabformcontact']['open_questions'] = array(
+            '#title' => $form_params['open_question'],
+            '#type' => 'textfield',
+            '#attributes' => array('tabindex'  => '15'),  
+           );  
+      $form['sabformcontact']['open_questions_label'] = array(
+        '#type' => 'hidden', 
+        '#value' => $form_params['open_question'],
+      );                    
+    }   
+    if( empty($form_params['question']) ){//open question two
       $form['sabformcontact']['questions'] = array(
         '#type' => 'hidden', 
         '#value' => 'NULL',
@@ -488,6 +508,8 @@ function sabm_globalforms_form_submit($form, &$form_state) {
   $node->field_channel[$node->language][0]['value']      = $form_state['values']['channel']; 
   $node->field_question_one[$node->language][0]['value'] = $form_state['values']['questions']; 
   $node->field_answer_one[$node->language][0]['value']   = $tmp_answer; 
+  $node->field_question_two[$node->language][0]['value'] = $form_state['values']['open_questions_label']; 
+  $node->field_answer_two[$node->language][0]['value']   = $form_state['values']['open_questions']; 
   $node->field_campaing[$node->language][0]['value']     = $form_state['values']['campaign']; 
   $node->field_brand[$node->language][0]['tid']          = $tmp_brand->tid;
   $node->field_formid[$node->language][0]['value']       = $form_state['values']['formid']; 
@@ -555,6 +577,7 @@ function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL 
       $response_object['channel'] = $node->field_channelform[$node->language][0]["value"]; 
       $response_object['question']= trim($node->field_open_question[$node->language][0]["value"]); 
       $response_object['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
+      $response_object['open_question'] = $node->field_open_unique_question[$node->language][0]["value"]; 
       $response_object['require_socialinfo'] = $node->field_require_social_info[$node->language][0]["value"]; 
       $response_object['country']   = $node->field_countryform[$node->language][0]['value'];
       $response_object['background']= file_create_url($node->field_background[$node->language][0]['uri']);
