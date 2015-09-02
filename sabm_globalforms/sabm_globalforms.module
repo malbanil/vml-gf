@@ -55,19 +55,25 @@ function sabm_globalforms_form_alter(&$form, &$form_state, $form_id){
       }   
   }
   else if($form_id=="saabforms_node_form"){
-    global $user;   
-    $user_fields = user_load($user->uid);   
-    $form['field_countryform']['und']['#value'] = $user_fields->field_countryform['und'][0]['value'];
-    $form['field_countryform']['und']['#disabled'] = TRUE;
-    $options_term=FALSE;
-    foreach ($user_fields->field_brandform['und'] as $key => $value) {
-      $term=taxonomy_term_load($value['tid']);
-      $options_term[$value['tid']]=$term->name;
-    } 
-    $form['field_brandform']['und']['#options']=$options_term;
-    $form['field_brandform']['und']['#multiple']=FALSE;
+    if(user_access('Administer country and brand' )){ 
+      $form['field_brandform']['und']['#multiple']=FALSE;
+    }
+      else{
+      global $user;   
+      $user_fields = user_load($user->uid);   
+      $form['field_countryform']['und']['#value'] = $user_fields->field_countryform['und'][0]['value'];
+      $form['field_countryform']['und']['#disabled'] = TRUE;
+      $options_term=FALSE;
+      foreach ($user_fields->field_brandform['und'] as $key => $value) {
+        $term=taxonomy_term_load($value['tid']);
+        $options_term[$value['tid']]=$term->name;
+      } 
+      $form['field_brandform']['und']['#options']=$options_term;
+      $form['field_brandform']['und']['#multiple']=FALSE;
+    }
   } 
 }
+
 
 
 /**
