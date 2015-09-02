@@ -251,9 +251,9 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
    $form['tab'] = array (
       '#type' => 'markup',
       '#markup' => '<ul class="tabs" id="sabform_tabs">
-                    <li class="tab-link current uno" data-tab="edit-sabformpersonal">1. Datos Personales</li>
-                    <li class="tab-link dos" data-tab="edit-sabformlocation">2. Ubicacion</li>
-                    <li class="tab-link tres" data-tab="edit-sabformcontact">3. Contacto</li></ul>',
+                    <li class="tab-link current uno" data-tab="edit-sabformpersonal">'.$form_params['labels']['field_label_tab1'].'</li>
+                    <li class="tab-link dos" data-tab="edit-sabformlocation">'.$form_params['labels']['field_label_tab2'].'</li>
+                    <li class="tab-link tres" data-tab="edit-sabformcontact">'.$form_params['labels']['field_label_tab3'].'</li></ul>',
    );
    $form['sabformpersonal'] = array(
     '#type' => 'fieldset',
@@ -305,11 +305,11 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
    );
    $form['sabformpersonal']['next1']  = array (
     '#type' => 'markup',
-    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformlocation" data-tabn="dos">'.t('Next').'</a>',
+    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformlocation" data-tabn="dos">'.$form_params['labels']['field_label_next'].'</a>',
    );
 
    $form['sabformlocation']['country'] = array(
-    '#title' => t('Country'),
+    '#title' => $form_params['labels']['field_label_country'],
     '#type' => 'textfield',
     '#value' => ucfirst($form_params['country']),   
     '#disabled' => TRUE, 
@@ -340,7 +340,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
    );  
    $form['sabformlocation']['next2']  = array (
     '#type' => 'markup',
-    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformcontact" data-tabn="tres">'.t('Next').'</a>',
+    '#markup' => '<a class="sabm-forms-next" data-tab="edit-sabformcontact" data-tabn="tres">'.$form_params['labels']['field_label_next'].'</a>',
    );
  
    $form['sabformcontact']['email'] = array(
@@ -383,7 +383,7 @@ function sabm_globalforms_theme($existing, $type, $theme, $path) {
        $option_channel = _get_sabmform_channels();
        $form['sabformcontact']['channel'] = array(
         '#type' => 'select',
-        '#title' => t('Como te enteraste de nosotros?'),
+        '#title' => $form_params['labels']['field_label_channel'],
         '#options' => $option_channel,
         '#attributes' => array('tabindex'  => '14'),     
        );
@@ -489,7 +489,7 @@ function sabm_globalforms_form_submit($form, &$form_state) {
   $node->field_question_one[$node->language][0]['value'] = $form_state['values']['questions']; 
   $node->field_answer_one[$node->language][0]['value']   = $tmp_answer; 
   $node->field_campaing[$node->language][0]['value']     = $form_state['values']['campaign']; 
-  $node->field_brand[$node->language][0]['tid']          = 2;//tmp_brand->tid;
+  $node->field_brand[$node->language][0]['tid']          = $tmp_brand->tid;
   $node->field_formid[$node->language][0]['value']       = $form_state['values']['formid']; 
   node_save($node);
   $reponse_token = md5($tmp_mail).'-'.$node->nid.'-'.$form_state['values']['formid'];
@@ -561,7 +561,10 @@ function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL 
       $response_object['logo']      = file_create_url($node->field_logo[$node->language][0]['uri']);
       $response_object['tyc']       = $node->body[$node->language][0]['value'];
       $response_object['bodymail']  = $node->field_body_email[$node->language][0]['value'];
-      $array_labels = array('field_label_first_name' => trim($node->field_label_first_name[$node->language][0]["value"]), 
+      $array_labels = array('field_label_tab1' => trim($node->field_label_tab1[$node->language][0]["value"]), 
+                            'field_label_tab2' => trim($node->field_label_tab2[$node->language][0]["value"]), 
+                            'field_label_tab3' => trim($node->field_label_tab3[$node->language][0]["value"]), 
+                            'field_label_first_name' => trim($node->field_label_first_name[$node->language][0]["value"]), 
                             'field_label_last_name'  => trim($node->field_label_last_name[$node->language][0]["value"]), 
                             'field_label_birth_day'  => trim($node->field_label_birth_day[$node->language][0]["value"]), 
                             'field_label_genre'  => trim($node->field_label_genre[$node->language][0]["value"]), 
@@ -570,10 +573,11 @@ function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL 
                             'field_label_state'  => trim($node->field_label_state[$node->language][0]["value"]),                             
                             'field_label_email'  => trim($node->field_label_email[$node->language][0]["value"]), 
                             'field_label_cell_number' => trim($node->field_label_cell_number[$node->language][0]["value"]), 
+                            'field_label_channel'  => trim($node->field_label_channel[$node->language][0]["value"]),                             
                             'field_label_optin'  => trim($node->field_label_optin[$node->language][0]["value"]), 
                             'field_label_terms'  => trim($node->field_label_terms[$node->language][0]["value"]), 
                             'field_label_submit' => trim($node->field_label_submit[$node->language][0]["value"]), 
-                            'field_label_email'  => trim($node->field_label_email[$node->language][0]["value"]), 
+                            'field_label_next'  => trim($node->field_label_next[$node->language][0]["value"]), 
                       );
       $response_object['labels']  = $array_labels;
       return $response_object;
