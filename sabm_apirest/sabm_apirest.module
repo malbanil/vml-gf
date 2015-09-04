@@ -35,9 +35,12 @@ function sabm_apirest_menu() {
         'access callback'   => TRUE,
         'page callback'     => 'callback_get_params',
         'delivery callback' => 'drupal_json_output'
-    );
+    );  
     return $items;
 }
+
+
+
 
 
 // Service "GET BRANDS"
@@ -338,11 +341,12 @@ function callback_get_location() {
 function callback_get_params() {
     
     $validateAccess = _validateAccessParam();
-    if($validateAccess != FALSE) {
-
+    if($validateAccess != FALSE) 
+    {
         // Validate value param
         $validateFields = _validate_fields_params();
-        if($validateFields === TRUE){
+        if($validateFields === TRUE)
+        {
             $params = _get_form_params($validateAccess);
             $param_selected = array();
             foreach ($params as $key => $value) {
@@ -350,52 +354,41 @@ function callback_get_params() {
                     $param_selected[$key] = $value;
                 }
             }
-
+            //validate if exist any answer
             if(empty($param_selected)){
                  $result =  new ArrayObject(array(
-                                            'response' => 
-                                                            new ArrayObject(array(
-                                                                                'id' => 107,
-                                                                                'description' => 'The param value don’t exists',
-                                                                                'params'  =>  NULL
-                                                          ))
-                                  ));
-
+                                'response' => new ArrayObject(array(
+                                'id' => 107,
+                                'description' => 'The param value don’t exists',
+                                'params'  =>  NULL
+                                ))
+                            ));
                 return $result;
-            }
-            else{
+            }else{
                 $result =  new ArrayObject(array(
-                                            'response' => 
-                                                            new ArrayObject(array(
-                                                                                'id' => 200,
-                                                                                'description' => 'Success',
-                                                                                'params'  =>  array(
-                                                                                                    new ArrayObject($param_selected)
-                                                                                                )
-                                                          ))
-                                  ));
-
+                                'response' => new ArrayObject(array(
+                                'id' => 200,
+                                'description' => 'Success',
+                                'params'  =>  array( new ArrayObject($param_selected) )
+                                ))
+                            ));
                 return $result;
             }
-        }
-        else{
+        }else{
             return $validateFields;
         }
 
-    }
-    else{
-        $result =  new ArrayObject(array(
-                                     'response'  =>  new ArrayObject(array(
-                                                            'code'  =>  203,
-                                                            'description'   =>  'Not autorized'
-                                                        ))
-                             ));
-
+    }else{
+        $result = new ArrayObject(array(
+                     'response'  =>  new ArrayObject(array(
+                     'code'  =>  203,
+                     'description'   =>  'Not autorized'
+                     ))
+                   ));
         return $result;
     }
 
 }
-
 
 // Validate that a date is in dd/mm/yyyy format
 function _validateDate($date) {
@@ -673,21 +666,21 @@ function _get_register($email) {
             $node = entity_load('node', $news_items_nids);
             $brand = taxonomy_term_load($node[$id_nodo]->field_brand['und'][0]['tid']);
             $response = array(
-                                'name'  =>  $node[$id_nodo]->title,
-                                'last-name' =>  $node[$id_nodo]->field_last_name['und'][0]['value'],
-                                'birth-day' =>  _convertDateEsp($node[$id_nodo]->field_birth_day['und'][0]['value']),
-                                'country'   =>  $node[$id_nodo]->field_country['und'][0]['value'],
-                                'email' =>  $node[$id_nodo]->field_email['und'][0]['value'],
-                                'phone' =>  $node[$id_nodo]->field_phone['und'][0]['value'],
-                                'tyc'   =>  $node[$id_nodo]->field_opt_in['und'][0]['value'],
-                                'genre' =>  $node[$id_nodo]->field_genre['und'][0]['value'],
-                                'facebook'  =>  $node[$id_nodo]->field_facebook_id['und'][0]['value'],
-                                'twitter'   =>  $node[$id_nodo]->field_twitter_id['und'][0]['value'],
-                                'state' =>  $node[$id_nodo]->field_state['und'][0]['value'],
-                                'city'  =>  $node[$id_nodo]->field_city['und'][0]['value'],
-                                'date-update'   =>  _convertDate($node[$id_nodo]->created),
-                                'campaing'  =>  $node[$id_nodo]->field_campaing['und'][0]['value'],
-                                'brand' =>  $brand->name
+                'name'  =>  $node[$id_nodo]->title,
+                'last-name' =>  $node[$id_nodo]->field_last_name['und'][0]['value'],
+                'birth-day' =>  _convertDateEsp($node[$id_nodo]->field_birth_day['und'][0]['value']),
+                'country'   =>  $node[$id_nodo]->field_country['und'][0]['value'],
+                'email' =>  $node[$id_nodo]->field_email['und'][0]['value'],
+                'phone' =>  $node[$id_nodo]->field_phone['und'][0]['value'],
+                'tyc'   =>  $node[$id_nodo]->field_opt_in['und'][0]['value'],
+                'genre' =>  $node[$id_nodo]->field_genre['und'][0]['value'],
+                'facebook'  =>  $node[$id_nodo]->field_facebook_id['und'][0]['value'],
+                'twitter'   =>  $node[$id_nodo]->field_twitter_id['und'][0]['value'],
+                'state' =>  $node[$id_nodo]->field_state['und'][0]['value'],
+                'city'  =>  $node[$id_nodo]->field_city['und'][0]['value'],
+                'date-update'   =>  _convertDate($node[$id_nodo]->created),
+                'campaing'  =>  $node[$id_nodo]->field_campaing['und'][0]['value'],
+                'brand' =>  $brand->name
                             );
             return $response;
         }
@@ -740,33 +733,32 @@ function _validate_field_value_insert() {
 
 // Validate the required fields and format date in a update
 function _validate_field_value_update() {
-
     $validateSetDataExistField = _validateSetDataExistField();
     if($validateSetDataExistField != NULL){
-        return $validateSetDataExistField;
+    return $validateSetDataExistField;
     }
 
     foreach ($_POST as $key => $value) {
-        if((($key == 'name' || $key == 'last-name' || $key == 'birth-day' || $key == 'country' || $key == 'email' || $key == 'phone' || $key == 'tyc') && $value == '')) {
-            $result = new ArrayObject(array(
-                            'result'  =>  new ArrayObject(array(
-                                                            'code'  =>  101,
-                                                            'description'   =>  'Field '.$key.' is required'
-                                                        ))
-                        ));
+    if((($key == 'name' || $key == 'last-name' || $key == 'birth-day' || $key == 'country' || $key == 'email' || $key == 'phone' || $key == 'tyc') && $value == '')) {
+    $result = new ArrayObject(array(
+                    'result'  =>  new ArrayObject(array(
+                    'code'  =>  101,
+                    'description'   =>  'Field '.$key.' is required'
+                    ))
+                ));
 
-            return $result;
-        }
-        if($key == 'birth-day' && !_validateDate($value)){
-            $result = new ArrayObject(array(
-                            'result'  =>  new ArrayObject(array(
-                                                            'code'  =>  103,
-                                                            'description'   =>  'Date format is not correct'
-                                                        ))
-                        ));
+    return $result;
+    }
+    if($key == 'birth-day' && !_validateDate($value)){
+    $result = new ArrayObject(array(
+                    'result'  =>  new ArrayObject(array(
+                    'code'  =>  103,
+                    'description'   =>  'Date format is not correct'
+                    ))
+                ));
 
-            return $result;
-        }
+    return $result;
+    }
     }
 
     return NULL;
@@ -797,46 +789,46 @@ function _delete_node_register($email) {
 // Validate required fields for get location
 function _validate_fields_location() {
     if($_POST['level'] == '' || !isset($_POST['level'])){
-        $result =  new ArrayObject(array(
-                                    'response' => 
-                                                    new ArrayObject(array(
-                                                                        'id' => 101,
-                                                                        'description' => 'Field level is required',
-                                                                        'location'  =>  NULL
-                                                  ))
-                          ));
+    $result =  new ArrayObject(array(
+    'response' => 
+                    new ArrayObject(array(
+                                        'id' => 101,
+                                        'description' => 'Field level is required',
+                                        'location'  =>  NULL
+                  ))
+    ));
 
-        return $result;
+    return $result;
     }
 
     if($_POST['country'] == '' || !isset($_POST['country'])){
-        $result =  new ArrayObject(array(
-                                    'response' => 
-                                                    new ArrayObject(array(
-                                                                        'id' => 101,
-                                                                        'description' => 'Field country is required',
-                                                                        'location'  =>  NULL
-                                                  ))
-                          ));
+    $result =  new ArrayObject(array(
+    'response' => 
+            new ArrayObject(array(
+                'id' => 101,
+                'description' => 'Field country is required',
+                'location'  =>  NULL
+          ))
+    ));
 
-        return $result;
+    return $result;
     }
 
     // Return a message if the level value is not 0, 1 or 2
     if($_POST['level'] != 0 && $_POST['level'] != 1 && $_POST['level'] != 2){
-        $result =  new ArrayObject(array(
-                                    'response' => 
-                                                    new ArrayObject(array(
-                                                                        'id' => 106,
-                                                                        'description' => 'The Level value should be (0,1,2)',
-                                                                        'location'  =>  NULL
-                                                  ))
-                          ));
+    $result =  new ArrayObject(array(
+    'response' => 
+        new ArrayObject(array(
+            'id' => 106,
+            'description' => 'The Level value should be (0,1,2)',
+            'location'  =>  NULL
+        ))
+    ));
 
-        return $result;
+    return $result;
     }   
 
-    return TRUE;
+    return TRUE;    
 }
 
 // Remove special character from string and convert to lowercase
@@ -853,49 +845,25 @@ function _clean($string) {
 
 function _validate_fields_params(){
     if($_POST['param'] == '' || !isset($_POST['param'])){
-        $result =  new ArrayObject(array(
-                                    'response' => 
-                                                    new ArrayObject(array(
-                                                                        'id' => 107,
-                                                                        'description' => 'The param value don’t exists',
-                                                                        'params'  =>  NULL
-                                                  ))
-                          ));
+    $result =  new ArrayObject(array(
+    'response' => 
+        new ArrayObject(array(
+                            'id' => 107,
+                            'description' => 'The param value don’t exists',
+                            'params'  =>  NULL
+      ))
+    ));
 
-        return $result;
+    return $result;
     }
 
     return TRUE;
 }
 
 function _get_form_params($nid_form = NULL, $param = ''){
-    $tmpnode = cache_get('nodeform_'.$nid_form);
-
-    if($tmpnode){
-        $node = $tmpnode->data;
-        $node = unserialize($node);
-        $form_params = array(); 
-        $form_params['formid']  = $node->nid;      
-        $form_params['country'] = $node->field_countryform[$node->language][0]['value'];
-        $form_params['brand']   = $node->field_brandform[$node->language][0]["taxonomy_term"]->name;
-        $form_params['campaign']= $node->field_campaignform[$node->language][0]["taxonomy_term"]->name;  
-        $form_params['channel'] = $node->field_channelform[$node->language][0]["value"]; 
-        $form_params['question']= $node->field_open_question[$node->language][0]["value"]; 
-        $form_params['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
-        return $form_params;
-    }
-    else{
-        $node = node_load($nid_form);
-        $form_params = array(); 
-        $form_params['formid']  = $node->nid;      
-        $form_params['country'] = $node->field_countryform[$node->language][0]['value'];
-        $form_params['brand']   = taxonomy_term_load($node->field_brandform[$node->language][0]["tid"])->name;
-        $form_params['campaign']= taxonomy_term_load($node->field_campaignform[$node->language][0]["tid"])->name;  
-        $form_params['channel'] = $node->field_channelform[$node->language][0]["value"]; 
-        $form_params['question']= $node->field_open_question[$node->language][0]["value"]; 
-        $form_params['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
-        return $form_params;
-    }
+    //use function un sabm_globalforms.module
+    $node = _get_look_globalforms($nid_form);
+    return $node;
 }
 
 // Validate if api token and api user exist

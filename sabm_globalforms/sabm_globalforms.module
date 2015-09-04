@@ -585,13 +585,13 @@ function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL 
       cache_set('nodeform_'.$nid_form,$node ,'cache',60*60*12);
     }
     if($node){
-
       $node = unserialize($node);
       $response_object = array();
       $response_object['formid']  = $node->nid;      
       $response_object['brand']   = $node->field_brandform[$node->language][0]["taxonomy_term"]->name;
       $response_object['campaign']= $node->field_campaignform[$node->language][0]["taxonomy_term"]->name;  
       $response_object['channel'] = $node->field_channelform[$node->language][0]["value"]; 
+      $response_object['channel_list'] = _get_sabmform_channels();
       $response_object['question']= trim($node->field_open_question[$node->language][0]["value"]); 
       $response_object['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
       $response_object['open_question'] = $node->field_open_unique_question[$node->language][0]["value"]; 
@@ -620,6 +620,7 @@ function _notify_sabmform_user($to = NULL ,$id_form = NULL, $id_register = NULL 
                             'field_label_next'  => trim($node->field_label_next[$node->language][0]["value"]), 
                       );
       $response_object['labels']  = $array_labels;
+      $response_object['all'] = $response_object;
       return $response_object;
     }
   }
