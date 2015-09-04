@@ -1,0 +1,5 @@
+[ 
+  {"id_country": 1, "country": "Argentina", "level":0}, 
+  {"id_state": 2, "state":"Cordoba", "level":1, "id_country": 1, "country": "Argentina"}, 
+  {"id_state": 2, "state":"Cordoba", "level":2, "id_country": 1, "country": "Argentina", "id_city": 3, "city":"Cordoba"}
+]

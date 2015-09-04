@@ -1,0 +1,6 @@
+name = Sabmiller Api Rest
+description = "Provides API REST for forms"
+core = 7.x
+version = 1.x
+package = Sabmiller
+

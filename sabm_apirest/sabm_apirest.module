@@ -1,0 +1,911 @@
+<?php
+
+function sabm_apirest_menu() {
+    $items['gfsaab/get-brands'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_get_brands',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/set-data'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_set_data',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/get-data'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_get_data',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/update-data'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_update_data',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/delete-data'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_delete_data',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/get-location'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_get_location',
+        'delivery callback' => 'drupal_json_output'
+    );
+    $items['gfsaab/get-params'] = array(
+        'access callback'   => TRUE,
+        'page callback'     => 'callback_get_params',
+        'delivery callback' => 'drupal_json_output'
+    );
+    return $items;
+}
+
+
+// Service "GET BRANDS"
+function callback_get_brands() {  
+
+    $vocabulary = taxonomy_vocabulary_machine_name_load('Brands');
+    $terms = entity_load('taxonomy_term', FALSE, array('vid' => $vocabulary->vid));
+
+    $result_terms = array();
+    foreach ($terms as $key => $value) {
+        $result_terms[]    =  new ArrayObject(array(
+                                                           'id' => $value->tid,
+                                                           'brand' => $value->name,
+                                                        ));
+    }
+
+    // Valid access token 
+    if(_validateAccess()){
+        $result = new ArrayObject(array(
+                                    'response' => 
+                                                    new ArrayObject(array(
+                                                                        'id' => 200,
+                                                                        'description' => 'success',
+                                                                        'brands' => $result_terms,
+                                                  )),
+                            ));
+
+        return $result;
+    }
+    else{
+        $result = new ArrayObject(array(
+                            'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized',
+                                                            'brands'    =>  NULL
+                                                        ))
+                        ));
+
+        return $result;
+    }
+
+}
+
+// Service "SET DATA"
+function callback_set_data() {
+
+    // Valid access token 
+    if(_validateAccess()){
+
+        // Validate required fields, format date and if exist the email. Return NULL if it's OK
+        $validateFields = _validate_field_value_insert();
+        if($validateFields == NULL){
+
+            // Create a node and save
+            _insert_node_register();
+            $result = new ArrayObject(array(
+                                        'response' => 
+                                                        new ArrayObject(array(
+                                                                            'id' => 200,
+                                                                            'description' => 'success'
+                                                      ))
+                              ));
+
+            return $result;
+        }
+        else{
+            return $validateFields;
+        }
+    }
+    else{
+        $result = new ArrayObject(array(
+                            'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+
+}
+
+// Service "GET DATA"
+function callback_get_data() {
+
+    // Valid access token 
+    if(_validateAccess()){
+
+        //Get node by email. Return false if the email doesn't exists
+        $register = _get_register($_POST['email']);
+
+        if($register == FALSE){
+            $result =  new ArrayObject(array(
+                                'response'  =>  new ArrayObject(array(
+                                                                'code'  =>  104,
+                                                                'description'   =>  'Email doesn’t exist'
+                                                            ))
+                            ));
+            return $result;
+        }
+        else{
+            $result = new ArrayObject(array(
+                                        'response' => 
+                                                        new ArrayObject(array(
+                                                                            'id' => 200,
+                                                                            'description' => 'success',
+                                                                            'data_form' =>  new ArrayObject($register)
+                                                      ))
+                                    ));
+            return $result;
+        }
+    }
+    else{
+        $result =  new ArrayObject(array(
+                            'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                        ));
+        return $result;
+    }    
+}
+
+// Service "UPDATE DATA"
+function callback_update_data() {
+
+    // Valid access token 
+    if(_validateAccess()){
+
+        // Validate required fields, format date and if exist the email. Return NULL if it's OK
+        $validateFields = _validate_field_value_update();
+        if($validateFields == NULL){
+
+            // Find node by email and does the update. Return false if the email doesn't exists
+            $result_update = _update_node_register($_POST['email']);
+            if($result_update == FALSE){
+                $result =  new ArrayObject(array(
+                                    'response'  =>  new ArrayObject(array(
+                                                                    'code'  =>  104,
+                                                                    'description'   =>  'Email doesn’t exist'
+                                                                ))
+                                ));
+                return $result;
+            }
+            $result = new ArrayObject(array(
+                                        'response' => 
+                                                        new ArrayObject(array(
+                                                                            'id' => 200,
+                                                                            'description' => 'success'
+                                                      ))
+                              ));
+
+            return $result;
+        }
+        else{
+            return $validateFields;
+        }
+
+    }
+    else{
+        $result = new ArrayObject(array(
+                            'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+
+}
+
+// Service "DELETE DATA"
+function callback_delete_data() {
+
+    // Valid access token 
+    if(_validateAccess()){
+
+        // Find node by email and does the delete. Return false if the email doesn't exists
+        $result_delete = _delete_node_register($_POST['email']);
+
+        if($result_delete == FALSE){
+            $result =  new ArrayObject(array(
+                                'response'  =>  new ArrayObject(array(
+                                                                'code'  =>  104,
+                                                                'description'   =>  'Email doesn’t exist'
+                                                            ))
+                            ));
+            return $result;
+        }
+        else{
+            $result = new ArrayObject(array(
+                                        'response' => 
+                                                        new ArrayObject(array(
+                                                                            'id' => 200,
+                                                                            'description' => 'success'
+                                                      ))
+                                    ));
+            return $result;
+        }
+
+    }
+    else{
+        $result =  new ArrayObject(array(
+                                     'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                             ));
+
+        return $result;
+    }
+}
+
+// Service "GET LOCATION"
+function callback_get_location() {
+
+    global $base_url;
+
+     // Valid access token 
+    if(_validateAccess()){
+
+
+        // Validate required fields
+        $validateFields = _validate_fields_location();
+        if($validateFields === TRUE){
+
+            // Get countries
+            $country_name = _clean($_POST['country']);
+            //$json_file = json_decode(file_get_contents("http://200.74.146.101/gf/?q=".$country_name.'-location-json'));
+            $json_file = json_decode(file_get_contents($base_url."/?q=".$country_name.'-location-json'));
+
+            // Return a message if the country doesn't exist
+            if($json_file == NULL){
+                $result =  new ArrayObject(array(
+                                            'response' => 
+                                                            new ArrayObject(array(
+                                                                                'id' => 105,
+                                                                                'description' => 'Country doesn’t exist',
+                                                                                'location'  =>  NULL
+                                                          ))
+                                  ));
+
+                return $result;
+            }
+            else{
+
+                // Save countries in an array
+                $locations = array();
+                $count = 0;
+                foreach ($json_file->nodes as $key => $value) {
+                    if($value->node->level == $_POST['level']){
+                        $locations[] = array(
+                                        'name'    =>  $value->node->name,
+                                        'id_state'   =>  $value->node->id_state,
+                                        'level'  =>  $value->node->level,
+                                        'term_id' =>  $value->node->term_id,
+                                    );
+                    }
+
+                    $count++;
+                }
+
+                // Return response success
+                $result =  new ArrayObject(array(
+                        'response' => 
+                                        new ArrayObject(array(
+                                                            'id' => 200,
+                                                            'description' => 'success',
+                                                            'location'  =>  array(
+                                                                                new ArrayObject($locations)
+                                                                            )
+                                      ))
+                ));  
+                
+                return $result;
+            }
+        }
+        else {
+            return $validateFields;
+        }
+
+    }
+    else{
+        $result =  new ArrayObject(array(
+                                     'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                             ));
+
+        return $result;
+    }
+
+}
+
+// Service "GET PARAMS"
+function callback_get_params() {
+    
+    $validateAccess = _validateAccessParam();
+    if($validateAccess != FALSE) {
+
+        // Validate value param
+        $validateFields = _validate_fields_params();
+        if($validateFields === TRUE){
+            $params = _get_form_params($validateAccess);
+            $param_selected = array();
+            foreach ($params as $key => $value) {
+                if($key == $_POST['param']){
+                    $param_selected[$key] = $value;
+                }
+            }
+
+            if(empty($param_selected)){
+                 $result =  new ArrayObject(array(
+                                            'response' => 
+                                                            new ArrayObject(array(
+                                                                                'id' => 107,
+                                                                                'description' => 'The param value don’t exists',
+                                                                                'params'  =>  NULL
+                                                          ))
+                                  ));
+
+                return $result;
+            }
+            else{
+                $result =  new ArrayObject(array(
+                                            'response' => 
+                                                            new ArrayObject(array(
+                                                                                'id' => 200,
+                                                                                'description' => 'Success',
+                                                                                'params'  =>  array(
+                                                                                                    new ArrayObject($param_selected)
+                                                                                                )
+                                                          ))
+                                  ));
+
+                return $result;
+            }
+        }
+        else{
+            return $validateFields;
+        }
+
+    }
+    else{
+        $result =  new ArrayObject(array(
+                                     'response'  =>  new ArrayObject(array(
+                                                            'code'  =>  203,
+                                                            'description'   =>  'Not autorized'
+                                                        ))
+                             ));
+
+        return $result;
+    }
+
+}
+
+
+// Validate that a date is in dd/mm/yyyy format
+function _validateDate($date) {
+    $d = DateTime::createFromFormat('d/m/Y', $date);
+    return $d && $d->format('d/m/Y') == $date;
+}
+
+// Receives a date in format dd/mm/yyyy and converts it in yyyy-mm-dd
+function _convertDateIng($date) {
+    $new_date = DateTime::createFromFormat('d/m/Y', $date);
+    return $new_date->format('Y-m-d');
+}
+
+// Receives a date in format yyyy-mm-dd and converts it in dd/mm/yyyy
+function _convertDateEsp($date) {
+    $new_date = DateTime::createFromFormat('Y-m-d H:i:s', $date);
+    return $new_date->format('d/m/Y');
+}
+
+// Receives a time and converts it in dd/mm/yyyy
+function _convertDate($date) {
+    return date('d/m/Y', $date);
+}
+
+// Validate if api token and api user exist
+function _validateAccess() {
+    $query_access = db_query("SELECT n1.field_api_token_value, n2.field_api_user_value FROM {field_data_field_api_token} n1, {field_data_field_api_user} n2  "
+                    . " WHERE n1.field_api_token_value = :api_token AND n2.field_api_user_value = :api_user AND n1.entity_id = n2.entity_id"
+                    , array(':api_token'=>$_POST['api_token'], ':api_user'=>$_POST['api_user']))->fetchAll();
+
+    if(empty($query_access))
+        return FALSE;
+    else
+        return TRUE;
+}
+
+// Validate if a email exists
+function _checkExistEmail($email) {
+    $query = db_query("SELECT n1.field_email_value FROM {field_data_field_email} n1  "
+                    . " WHERE n1.field_email_value = :email "
+                    , array(':email'=>$email))->fetchAll();
+
+    if(empty($query))
+        return TRUE;
+    else
+        return FALSE;
+}
+
+// Validate if required fields are set in the post data
+function _validateSetDataExistField() {
+    if(!isset($_POST['name'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field name is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['last-name'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field last-name is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['birth-day'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field birth-day is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['country'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field country is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['email'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field email is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['phone'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field phone is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    if(!isset($_POST['tyc'])){
+        $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field tyc is required'
+                                                        ))
+                        ));
+
+        return $result;
+    }
+    return NULL;
+}
+
+// Find a taxonomy id by taxonomy name and vocabulary
+function _get_term_from_name($term_name, $vocabulary_name) {
+  if ($vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary_name)) {
+    $tree = taxonomy_get_tree($vocabulary->vid);
+    foreach ($tree as $term) {
+      if ($term->name == $term_name) {
+        return $term->tid;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+// Create a node and save
+function _insert_node_register() {
+    $node = new stdClass();
+    if(isset($_POST['name'])){
+        $node->title = $_POST['name'];
+    }
+    $node->type = 'register';
+    node_object_prepare($node);
+    $node->language = LANGUAGE_NONE;
+    $node->created = time();
+    $node->changed = time();
+    if(isset($_POST['name']) && $_POST['name'] != ''){
+        $node->title = $_POST['name'];
+    }
+    if(isset($_POST['last-name'])  && $_POST['last-name'] != ''){
+        $node->field_last_name[$node->language][]['value'] = $_POST['last-name'];
+    }
+    if(isset($_POST['birth-day'])  && $_POST['birth-day'] != ''){
+        $node->field_birth_day[$node->language][]['value'] = _convertDateIng($_POST['birth-day']);
+    }
+    if(isset($_POST['email'])  && $_POST['email'] != ''){
+        $node->field_email[$node->language][]['value'] = $_POST['email'];
+    }
+    if(isset($_POST['country'])  && $_POST['country'] != ''){
+        $node->field_country[$node->language][]['value'] = $_POST['country'];
+    }
+    if(isset($_POST['phone'])  && $_POST['phone'] != ''){
+        $node->field_phone[$node->language][]['value'] = $_POST['phone'];
+    }
+    if(isset($_POST['tyc'])  && $_POST['tyc'] != ''){
+        $node->field_opt_in[$node->language][]['value'] = $_POST['tyc'];
+    }
+    if(isset($_POST['genre'])  && $_POST['genre'] != ''){
+        $node->field_genre[$node->language][]['value'] = $_POST['genre'];
+    }
+    if(isset($_POST['state'])  && $_POST['state'] != ''){
+        $node->field_state[$node->language][]['value'] = $_POST['state'];
+    }
+    if(isset($_POST['city'])  && $_POST['city'] != ''){
+        $node->field_city[$node->language][]['value'] = $_POST['city'];
+    }
+    if(isset($_POST['campaing'])  && $_POST['campaing'] != ''){
+        $node->field_campaing[$node->language][]['value'] = $_POST['campaing'];
+    }
+    if(isset($_POST['brand'])  && $_POST['brand'] != '' && _get_term_from_name($_POST['brand'],'Brand') != FALSE){
+        $node->field_brand[$node->language][]['tid'] = _get_term_from_name($_POST['brand'],'Brand');
+    }
+    if(isset($_POST['facebook-id'])  && $_POST['facebook-id'] != ''){
+        $node->field_facebook_id[$node->language][]['value'] = $_POST['facebook-id'];
+    }
+    if(isset($_POST['twitter-id'])  && $_POST['twitter-id'] != ''){
+        $node->field_twitter_id[$node->language][]['value'] = $_POST['twitter-id'];
+    }
+    $node = node_submit($node);
+    node_save($node);
+}
+
+// Find a node by email value and does the update
+function _update_node_register($email) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', 'register')
+          ->fieldCondition('field_email', 'value', $_POST['email'], '=');
+    $result = $query->execute();   
+
+    if(empty($result)){
+        return FALSE;
+    }
+    else{
+        if(isset($result['node'])){
+            $news_items_nids = array_keys($result['node']);
+            $id_nodo = $news_items_nids[0];
+            $node = node_load($id_nodo);
+            
+            if(isset($_POST['name']) && $_POST['name'] != ''){
+                $node->title = $_POST['name'];
+            }
+            if(isset($_POST['last-name']) && $_POST['last-name'] != ''){
+                $node->field_last_name[$node->language][0]['value'] = $_POST['last-name'];
+            }
+            if(isset($_POST['birth-day']) && $_POST['birth-day'] != ''){
+                $node->field_birth_day[$node->language][0]['value'] = _convertDateIng($_POST['birth-day']);
+            }
+            if(isset($_POST['country']) && $_POST['country'] != ''){
+                $node->field_country[$node->language][0]['value'] = $_POST['country'];
+            }
+            if(isset($_POST['phone']) && $_POST['phone'] != ''){
+                $node->field_phone[$node->language][0]['value'] = $_POST['phone'];
+            }
+            if(isset($_POST['tyc']) && $_POST['tyc'] != ''){
+                $node->field_opt_in[$node->language][0]['value'] = $_POST['tyc'];
+            }
+            if(isset($_POST['genre']) && $_POST['genre'] != ''){
+                $node->field_genre[$node->language][0]['value'] = $_POST['genre'];
+            }
+            if(isset($_POST['state']) && $_POST['state'] != ''){
+                $node->field_state[$node->language][0]['value'] = $_POST['state'];
+            }
+            if(isset($_POST['city']) && $_POST['city'] != ''){
+                $node->field_city[$node->language][0]['value'] = $_POST['city'];
+            }
+            if(isset($_POST['campaing']) && $_POST['campaing'] != ''){
+                $node->field_campaing[$node->language][0]['value'] = $_POST['campaing'];
+            }
+            if(isset($_POST['brand']) && _get_term_from_name($_POST['brand'],'Brand') != FALSE && $_POST['brand'] != ''){
+                $node->field_brand[$node->language][0]['tid'] = _get_term_from_name($_POST['brand'],'Brand');
+            }
+            if(isset($_POST['facebook-id']) && $_POST['facebook-id'] != ''){
+                $node->field_facebook_id[$node->language][0]['value'] = $_POST['facebook-id'];
+            }
+            if(isset($_POST['twitter-id']) && $_POST['twitter-id'] != ''){
+                $node->field_twitter_id[$node->language][0]['value'] = $_POST['twitter-id'];
+            }
+                   
+            $node->changed = time();
+            node_save($node);
+
+            return TRUE;
+        }
+    }
+}
+
+// Get a node by email value
+function _get_register($email) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', 'register')
+          ->fieldCondition('field_email', 'value', $_POST['email'], '=');
+    $result = $query->execute();   
+
+    if(empty($result)){
+        return FALSE;
+    }
+    else{
+        if(isset($result['node'])){
+            $news_items_nids = array_keys($result['node']);
+            $id_nodo = $news_items_nids[0];
+            $node = entity_load('node', $news_items_nids);
+            $brand = taxonomy_term_load($node[$id_nodo]->field_brand['und'][0]['tid']);
+            $response = array(
+                                'name'  =>  $node[$id_nodo]->title,
+                                'last-name' =>  $node[$id_nodo]->field_last_name['und'][0]['value'],
+                                'birth-day' =>  _convertDateEsp($node[$id_nodo]->field_birth_day['und'][0]['value']),
+                                'country'   =>  $node[$id_nodo]->field_country['und'][0]['value'],
+                                'email' =>  $node[$id_nodo]->field_email['und'][0]['value'],
+                                'phone' =>  $node[$id_nodo]->field_phone['und'][0]['value'],
+                                'tyc'   =>  $node[$id_nodo]->field_opt_in['und'][0]['value'],
+                                'genre' =>  $node[$id_nodo]->field_genre['und'][0]['value'],
+                                'facebook'  =>  $node[$id_nodo]->field_facebook_id['und'][0]['value'],
+                                'twitter'   =>  $node[$id_nodo]->field_twitter_id['und'][0]['value'],
+                                'state' =>  $node[$id_nodo]->field_state['und'][0]['value'],
+                                'city'  =>  $node[$id_nodo]->field_city['und'][0]['value'],
+                                'date-update'   =>  _convertDate($node[$id_nodo]->created),
+                                'campaing'  =>  $node[$id_nodo]->field_campaing['und'][0]['value'],
+                                'brand' =>  $brand->name
+                            );
+            return $response;
+        }
+    }
+}
+
+// Validate the required fields, format date and if exist the email in an insertion
+function _validate_field_value_insert() {
+
+    $validateSetDataExistField = _validateSetDataExistField();
+    if($validateSetDataExistField != NULL){
+        return $validateSetDataExistField;
+    }
+
+    foreach ($_POST as $key => $value) {
+        if((($key == 'name' || $key == 'last-name' || $key == 'birth-day' || $key == 'country' || $key == 'email' || $key == 'phone' || $key == 'tyc') && $value == '')) {
+            $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field '.$key.' is required'
+                                                        ))
+                        ));
+
+            return $result;
+        }
+        if($key == 'birth-day' && !_validateDate($value)){
+            $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  103,
+                                                            'description'   =>  'Date format is not correct'
+                                                        ))
+                        ));
+
+            return $result;
+        }
+        if($key == 'email' && !_checkExistEmail($value)){
+            $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  102,
+                                                            'description'   =>  'The email exists'
+                                                        ))
+                        ));
+
+            return $result;
+        }
+    }
+
+    return NULL;
+}
+
+// Validate the required fields and format date in a update
+function _validate_field_value_update() {
+
+    $validateSetDataExistField = _validateSetDataExistField();
+    if($validateSetDataExistField != NULL){
+        return $validateSetDataExistField;
+    }
+
+    foreach ($_POST as $key => $value) {
+        if((($key == 'name' || $key == 'last-name' || $key == 'birth-day' || $key == 'country' || $key == 'email' || $key == 'phone' || $key == 'tyc') && $value == '')) {
+            $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  101,
+                                                            'description'   =>  'Field '.$key.' is required'
+                                                        ))
+                        ));
+
+            return $result;
+        }
+        if($key == 'birth-day' && !_validateDate($value)){
+            $result = new ArrayObject(array(
+                            'result'  =>  new ArrayObject(array(
+                                                            'code'  =>  103,
+                                                            'description'   =>  'Date format is not correct'
+                                                        ))
+                        ));
+
+            return $result;
+        }
+    }
+
+    return NULL;
+}
+
+// Find a node by email value and does the delete
+function _delete_node_register($email) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', 'register')
+          ->fieldCondition('field_email', 'value', $email, '=');
+    $result = $query->execute();   
+
+    if(empty($result)){
+        return FALSE;
+    }
+    else{
+        if(isset($result['node'])){
+            $news_items_nids = array_keys($result['node']);
+            $id_nodo = $news_items_nids[0];
+            node_delete($id_nodo);
+
+            return TRUE;
+        }
+    }
+}
+
+// Validate required fields for get location
+function _validate_fields_location() {
+    if($_POST['level'] == '' || !isset($_POST['level'])){
+        $result =  new ArrayObject(array(
+                                    'response' => 
+                                                    new ArrayObject(array(
+                                                                        'id' => 101,
+                                                                        'description' => 'Field level is required',
+                                                                        'location'  =>  NULL
+                                                  ))
+                          ));
+
+        return $result;
+    }
+
+    if($_POST['country'] == '' || !isset($_POST['country'])){
+        $result =  new ArrayObject(array(
+                                    'response' => 
+                                                    new ArrayObject(array(
+                                                                        'id' => 101,
+                                                                        'description' => 'Field country is required',
+                                                                        'location'  =>  NULL
+                                                  ))
+                          ));
+
+        return $result;
+    }
+
+    // Return a message if the level value is not 0, 1 or 2
+    if($_POST['level'] != 0 && $_POST['level'] != 1 && $_POST['level'] != 2){
+        $result =  new ArrayObject(array(
+                                    'response' => 
+                                                    new ArrayObject(array(
+                                                                        'id' => 106,
+                                                                        'description' => 'The Level value should be (0,1,2)',
+                                                                        'location'  =>  NULL
+                                                  ))
+                          ));
+
+        return $result;
+    }   
+
+    return TRUE;
+}
+
+// Remove special character from string and convert to lowercase
+function _clean($string) {
+    $string = str_replace(' ', '-', $string); // Replaces all spaces with hyphens.
+    $unwanted_array = array(    'Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
+                            'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U',
+                            'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c',
+                            'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
+                            'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' );
+    $string = strtr( $string, $unwanted_array );
+    return strtolower(preg_replace('/[^A-Za-z0-9\-]/', '', $string)); // Removes special chars.
+}
+
+function _validate_fields_params(){
+    if($_POST['param'] == '' || !isset($_POST['param'])){
+        $result =  new ArrayObject(array(
+                                    'response' => 
+                                                    new ArrayObject(array(
+                                                                        'id' => 107,
+                                                                        'description' => 'The param value don’t exists',
+                                                                        'params'  =>  NULL
+                                                  ))
+                          ));
+
+        return $result;
+    }
+
+    return TRUE;
+}
+
+function _get_form_params($nid_form = NULL, $param = ''){
+    $tmpnode = cache_get('nodeform_'.$nid_form);
+
+    if($tmpnode){
+        $node = $tmpnode->data;
+        $node = unserialize($node);
+        $form_params = array(); 
+        $form_params['formid']  = $node->nid;      
+        $form_params['country'] = $node->field_countryform[$node->language][0]['value'];
+        $form_params['brand']   = $node->field_brandform[$node->language][0]["taxonomy_term"]->name;
+        $form_params['campaign']= $node->field_campaignform[$node->language][0]["taxonomy_term"]->name;  
+        $form_params['channel'] = $node->field_channelform[$node->language][0]["value"]; 
+        $form_params['question']= $node->field_open_question[$node->language][0]["value"]; 
+        $form_params['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
+        return $form_params;
+    }
+    else{
+        $node = node_load($nid_form);
+        $form_params = array(); 
+        $form_params['formid']  = $node->nid;      
+        $form_params['country'] = $node->field_countryform[$node->language][0]['value'];
+        $form_params['brand']   = taxonomy_term_load($node->field_brandform[$node->language][0]["tid"])->name;
+        $form_params['campaign']= taxonomy_term_load($node->field_campaignform[$node->language][0]["tid"])->name;  
+        $form_params['channel'] = $node->field_channelform[$node->language][0]["value"]; 
+        $form_params['question']= $node->field_open_question[$node->language][0]["value"]; 
+        $form_params['answers'] = $node->field_open_answers[$node->language][0]["value"]; 
+        return $form_params;
+    }
+}
+
+// Validate if api token and api user exist
+function _validateAccessParam() {
+    $query_access = db_query("SELECT n1.entity_id, n1.field_api_token_value, n2.field_api_user_value FROM {field_data_field_api_token} n1, {field_data_field_api_user} n2  "
+                    . " WHERE n1.field_api_token_value = :api_token AND n2.field_api_user_value = :api_user AND n1.entity_id = n2.entity_id"
+                    , array(':api_token'=>$_POST['api_token'], ':api_user'=>$_POST['api_user']))->fetchAll();
+
+    if(empty($query_access))
+        return FALSE;
+    else
+        return $query_access[0]->entity_id;
+}
